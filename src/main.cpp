@@ -8,7 +8,9 @@
 #include <unistd.h>
 #include <ncurses.h>
 #include <gtest/gtest.h>
+#include <pwd.h>
 
+char* file = NULL;
 bool interactive = false;
 bool slimOutput = false;
 
@@ -79,7 +81,7 @@ line* processLine(char *str) {
 
 void readFile(int *totalCount, line** allLines) {
 	(*totalCount) = 0;
-	FILE* fp = fopen(".timecop.txt", "r");
+	FILE* fp = fopen(file, "r");
 	if (fp == NULL) {
 		return;
 	}
@@ -106,14 +108,17 @@ void cleanup(int *totalCount, line** allLines) {
 		deleteTaskIndex(totalCount, i - 1, allLines);
 	}
 	free(allLines);
+	free(file);
+
 	if (interactive) {
 		endwin();
 	}
 	exit(0);
+
 }
 
 void writeFile(int totalCount, line** allLines) {
-	FILE* fp = fopen(".timecop.txt", "w");
+	FILE* fp = fopen(file, "w");
 
 	for (int i = 0; i < totalCount; i++) {
 		fprintf(fp, "%s %li", allLines[i]->name, allLines[i]->timeSpent);
@@ -456,6 +461,20 @@ void parseCommand(int argc, char** argv, int *totalCount, line** allLines) {
 	printTimeSheet(*totalCount, allLines);
 }
 
+void setFileName() {
+	const char* file_name = ".timecop.txt";
+	const char* homedir;
+	if ((homedir = getenv("HOME")) == NULL) {
+		homedir = getpwuid(getuid())->pw_dir;
+	}
+	file = (char *)calloc(1,
+			(strlen(homedir) + strlen(file_name) + 2) * sizeof(char));
+	strcat(file, homedir);
+	strcat(file, "/");
+	strcat(file, file_name);
+}
+
+
 int main(int argc, char **argv) {
 	if (argc >= 2 && strcmp(argv[1], "-t") == 0) {
 		int argc2 = argc-1;
@@ -465,6 +484,7 @@ int main(int argc, char **argv) {
 
 	int totalCount = 0;
 	line** allLines = (line **)calloc(100, sizeof(line*));
+	setFileName();
 	readFile(&totalCount, allLines);
 	parseCommand(argc, argv, &totalCount, allLines);
 	cleanup(&totalCount, allLines);
