@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 
 bool interactive = false;
+bool slimOutput = false;
 
 void printHelp(char *str, int *totalCount, line** allLines) {
 	if (interactive) {
@@ -35,6 +36,7 @@ void printHelp(char *str, int *totalCount, line** allLines) {
 		printf("-c\t\tdelete(clear) all timers\n");
 		printf("-r\t\treset all timers\n");
 		printf("-i\t\tinteractive mode");
+		printf("-s\t\tslim output mode, useful for .bashrc");
 		printf("[+/-]###[H,M,S] {id} \tIncrement/Decrement timer\n");
 
 		printf("{id}\t\tSwitch to given task\n\n");
@@ -147,7 +149,7 @@ void printTimeSheet(int totalCount, line** allLines) {
 
 			printw("%s\t\t\t %02i:%02i:%02i\n", allLines[i]->name, hours,
 					minutes, seconds);
-		} else {
+		} else if (!slimOutput) {
 			printf("%i: ", i + 1);
 			if (allLines[i]->timeStarted != 0) {
 				printf("* ");
@@ -165,8 +167,10 @@ void printTimeSheet(int totalCount, line** allLines) {
 	if (interactive) {
 		move(totalCount + 1, 0);
 		printw("Total: \t\t\t\t %02i:%02i:%02i\n", hours, minutes, seconds);
-	} else {
+	} else if (!slimOutput) {
 		printf("Total: \t\t\t\t %02i:%02i:%02i\n", hours, minutes, seconds);
+	} else {
+		printf("%02i:%02i:%02i", hours, minutes, seconds);
 	}
 
 	bool negative = false;
@@ -188,7 +192,7 @@ void printTimeSheet(int totalCount, line** allLines) {
 			printw(" ");
 		}
 		printw("%02i:%02i:%02i\n", hours, minutes, seconds);
-	} else {
+	} else if (!slimOutput){
 		printf("Total Remaining:\t\t");
 		if (negative) {
 			printf("-");
@@ -208,7 +212,7 @@ void printTimeSheet(int totalCount, line** allLines) {
 	if (interactive) {
 		move(totalCount + 3, 0);
 		printw("Time End: \t\t\t %02i:%02i:%02i\n", hours, minutes, seconds);
-	} else {
+	} else if (!slimOutput){
 		printf("Time End: \t\t\t %02i:%02i:%02i\n", hours, minutes, seconds);
 	}
 }
@@ -427,6 +431,8 @@ void parseCommand(int argc, char** argv, int *totalCount, line** allLines) {
 			cleanup(totalCount, allLines);
 		} else if (strcmp(argv[1], "-i") == 0 && interactive != true) {
 			interactiveConsole(totalCount, allLines);
+		} else if (strcmp(argv[1], "-s") == 0 && interactive != true) {
+			slimOutput = true;
 		} else {
 			startTimer(*totalCount, argv, allLines);
 			writeFile(*totalCount, allLines);
